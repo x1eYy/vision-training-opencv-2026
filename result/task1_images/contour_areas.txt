@@ -1,0 +1,6 @@
+Area threshold: 200 px^2
+Selected contours: 4
+1: 4114.0 px^2
+2: 907.5 px^2
+3: 48449.5 px^2
+4: 236366.5 px^2
