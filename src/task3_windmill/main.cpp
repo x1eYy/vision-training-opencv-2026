@@ -44,77 +44,89 @@ double disk_fraction(const cv::Mat& mask,cv::Point2d center,double radius){
     }
     return all?double(on)/all:1;
 }
-std::vector<Circle> find_targets(const cv::Mat& mask,cv::Point2d pivot){
+std::vector<Circle> find_targets(const cv::Mat& mask,const cv::Mat& bright,const cv::Mat& green,cv::Point2d pivot,bool large){
     cv::Mat labels,stats,centroids;
     int count=cv::connectedComponentsWithStats(mask,labels,stats,centroids,8);
     std::vector<Circle> result;
     for(int i=1;i<count;++i){
         int x=stats.at<int>(i,cv::CC_STAT_LEFT),y=stats.at<int>(i,cv::CC_STAT_TOP);
         int w=stats.at<int>(i,cv::CC_STAT_WIDTH),h=stats.at<int>(i,cv::CC_STAT_HEIGHT),area=stats.at<int>(i,cv::CC_STAT_AREA);
-        if(w<42||w>115||h<42||h>115||area<250||area>3500)continue;
-        double ratio=double(w)/h;if(ratio<0.72||ratio>1.35)continue;
+        if(large){
+            if(w<36||w>68||h<36||h>68||area<240||area>1400)continue;
+        }else if(w<60||w>110||h<60||h>110||area<350||area>2400)continue;
+        double ratio=double(w)/h;if(ratio<0.75||ratio>1.30)continue;
         cv::Point2d center(x+w/2.0,y+h/2.0);double radius=(w+h)/4.0;
         double distance=cv::norm(center-pivot);
-        if(distance<105||distance>300)continue;
+        if(distance<(large?95:105)||distance>320)continue;
         double inner=disk_fraction(mask,center,radius*0.5);
-        if(inner>0.12)continue; // The external sight marker has a filled inner ring.
-        double score=1.0-inner-std::abs(w-h)/double(std::max(w,h));
+        if(inner>0.10)continue; // Glowing blade sectors and concentric sight markers are not empty target rings.
+        if(disk_fraction(green,center,radius*1.5)>0.12)continue; // Green impact cloud invalidates an otherwise visible ring.
+        cv::Rect rect(x,y,w,h);
+        cv::Mat member=(labels(rect)==i),bright_member;
+        cv::bitwise_and(member,bright(rect),bright_member);
+        double bright_ratio=double(cv::countNonZero(bright_member))/area;
+        if(bright_ratio<(large?0.18:0.25))continue; // A dim ring remains visible after an invalidated target.
+        double score=2*bright_ratio+1.0-inner-std::abs(w-h)/double(std::max(w,h));
         result.push_back({center,radius,score});
     }
     std::sort(result.begin(),result.end(),[](const Circle& a,const Circle& b){return a.score>b.score;});
-    return result;
-}
-std::vector<Circle> find_blades(const cv::Mat& bright,const cv::Mat& broad,cv::Point2d pivot){
-    // In the large-energy video the useful blade is a compact glowing sector,
-    // while the separate concentric sight marker is connected by chevrons.
-    cv::Mat labels,stats,centroids;
-    int count=cv::connectedComponentsWithStats(broad,labels,stats,centroids,8);
-    std::vector<cv::Point2d> sights;
-    for(int i=1;i<count;++i){
-        int x=stats.at<int>(i,cv::CC_STAT_LEFT),y=stats.at<int>(i,cv::CC_STAT_TOP);
-        int w=stats.at<int>(i,cv::CC_STAT_WIDTH),h=stats.at<int>(i,cv::CC_STAT_HEIGHT),area=stats.at<int>(i,cv::CC_STAT_AREA);
-        if(w<55||w>100||h<55||h>100||area<700||area>2400)continue;
-        cv::Point2d p(x+w/2.0,y+h/2.0);double d=cv::norm(p-pivot);
-        if(d<120||d>300)continue;
-        if(disk_fraction(broad,p,std::min(w,h)*0.25)>0.16)sights.push_back(p);
-    }
-    cv::Mat blabels,bstats,bcentroids;int n=cv::connectedComponentsWithStats(bright,blabels,bstats,bcentroids,8);
-    std::vector<Circle> result;
-    for(int i=1;i<n;++i){
-        int x=bstats.at<int>(i,cv::CC_STAT_LEFT),y=bstats.at<int>(i,cv::CC_STAT_TOP);
-        int w=bstats.at<int>(i,cv::CC_STAT_WIDTH),h=bstats.at<int>(i,cv::CC_STAT_HEIGHT),area=bstats.at<int>(i,cv::CC_STAT_AREA);
-        if(w<25||w>130||h<25||h>130||area<300||area>2500)continue;
-        double aspect=double(w)/h;if(aspect<0.45||aspect>1.5)continue;
-        cv::Point2d p(bcentroids.at<double>(i,0),bcentroids.at<double>(i,1));
-        double distance=cv::norm(p-pivot);if(distance<25||distance>145)continue;
-        bool arrow=false;
-        for(const auto& sight:sights){
-            cv::Point2d a=p-pivot,b=sight-pivot;
-            if(a.dot(b)/(cv::norm(a)*cv::norm(b))>0.93){arrow=true;break;}
-        }
-        if(arrow)continue;
-        result.push_back({p,0.55*std::max(w,h),double(area)});
-    }
-    std::sort(result.begin(),result.end(),[](const Circle&a,const Circle&b){return a.score>b.score;});
     return result;
 }
 struct Tracker {
     int id=0,next_id=1,lost=0,detected=0,reselected=0,missing=0;
     std::optional<Circle> selected;
     cv::Point2d relative{0,0};
+    std::optional<cv::Point2d> pending_relative;
+    std::optional<cv::Point2d> blocked_relative;
+    int blocked_age=0;
+    int pending_count=0;
     std::vector<int> switch_frames;
-    std::optional<Circle> update(const std::vector<Circle>& candidates,cv::Point2d pivot,int frame) {
+    std::vector<int> hit_frames;
+    std::optional<Circle> update(const std::vector<Circle>& candidates,const cv::Mat& green,cv::Point2d pivot,int frame) {
+        if(id && selected && disk_fraction(green,pivot+relative,selected->radius*1.5)>0.12){
+            blocked_relative=relative;blocked_age=0;hit_frames.push_back(frame);
+            id=0;selected.reset();lost=0;pending_relative.reset();pending_count=0;
+        }
+        std::vector<Circle> available;
+        int blocked_match=-1;double blocked_distance=std::numeric_limits<double>::infinity();
+        if(blocked_relative){
+            ++blocked_age;
+            for(size_t i=0;i<candidates.size();++i){
+                double distance=cv::norm((candidates[i].center-pivot)-*blocked_relative);
+                if(distance<blocked_distance){blocked_distance=distance;blocked_match=int(i);}
+            }
+            if(blocked_match>=0 && blocked_distance<50)
+                blocked_relative=candidates[blocked_match].center-pivot;
+            else blocked_match=-1;
+            if(blocked_age>150){blocked_relative.reset();blocked_match=-1;}
+        }
+        for(size_t i=0;i<candidates.size();++i)
+            if(int(i)!=blocked_match)available.push_back(candidates[i]);
         int match=-1;double best=std::numeric_limits<double>::infinity();
         if(id){
-            for(size_t i=0;i<candidates.size();++i){
-                double distance=cv::norm((candidates[i].center-pivot)-relative);
+            for(size_t i=0;i<available.size();++i){
+                double distance=cv::norm((available[i].center-pivot)-relative);
                 if(distance<best && distance<35+lost*8){best=distance;match=int(i);}
             }
         }
-        if(match>=0){selected=candidates[match];relative=selected->center-pivot;lost=0;++detected;return selected;}
-        if(id){++lost;if(lost<=LOST_TOLERANCE){++missing;return std::nullopt;}id=0;selected.reset();}
-        if(!candidates.empty()){
-            id=next_id++;selected=candidates.front();relative=selected->center-pivot;lost=0;
+        if(match>=0){selected=available[match];relative=selected->center-pivot;lost=0;pending_relative.reset();pending_count=0;++detected;return selected;}
+        if(id){
+            ++lost;
+            if(!available.empty()){
+                cv::Point2d alternative=available.front().center-pivot;
+                if(pending_relative && cv::norm(alternative-*pending_relative)<40)++pending_count;
+                else {pending_relative=alternative;pending_count=1;}
+                if(pending_count>=3){
+                    id=next_id++;selected=available.front();relative=alternative;lost=0;
+                    pending_relative.reset();pending_count=0;++detected;++reselected;switch_frames.push_back(frame);
+                    return selected;
+                }
+            }else {pending_relative.reset();pending_count=0;}
+            if(lost<=LOST_TOLERANCE){++missing;return std::nullopt;}
+            id=0;selected.reset();
+        }
+        if(!available.empty()){
+            id=next_id++;selected=available.front();relative=selected->center-pivot;lost=0;
             ++detected;if(id>1){++reselected;switch_frames.push_back(frame);}return selected;
         }
         ++missing;return std::nullopt;
@@ -137,12 +149,14 @@ int main(int argc,char** argv) try {
     Tracker tracker;std::optional<cv::Point2d> previous_center;int center_seen=0,frame_index=0;cv::Mat frame;
     while(cap.read(frame)){
         cv::Mat bright=orange_mask(frame,130,120),broad=orange_mask(frame,80,55);
+        cv::Mat hsv,green;cv::cvtColor(frame,hsv,cv::COLOR_BGR2HSV);
+        cv::inRange(hsv,cv::Scalar(30,30,20),cv::Scalar(100,255,255),green);
         auto center=find_center(bright,templ,previous_center);
         if(!center)center=find_center(bright,templ,std::nullopt);
         std::vector<Circle> candidates;
         if(center){
             previous_center=center->point;++center_seen;
-            candidates=large?find_blades(bright,broad,center->point):find_targets(broad,center->point);
+            candidates=find_targets(broad,bright,green,center->point,large);
         }
         cv::Mat overlay=frame.clone(),binary_bgr;cv::cvtColor(broad,binary_bgr,cv::COLOR_GRAY2BGR);
         std::optional<Circle> chosen;
@@ -150,10 +164,11 @@ int main(int argc,char** argv) try {
             cv::circle(overlay,center->point,5,{0,255,0},-1);
             vision::label(overlay,"R center",center->point+cv::Point2d(12,-12),{0,255,0});
             cv::circle(binary_bgr,center->point,7,{0,255,0},2);
-            chosen=tracker.update(candidates,center->point,frame_index);
+            chosen=tracker.update(candidates,green,center->point,frame_index);
         }else{
             ++tracker.missing;
             if(tracker.id && ++tracker.lost>LOST_TOLERANCE){tracker.id=0;tracker.selected.reset();}
+            tracker.pending_relative.reset();tracker.pending_count=0;
             previous_center.reset();
         }
         for(const auto& c:candidates)cv::circle(binary_bgr,c.center,int(c.radius),{0,255,255},2);
@@ -173,6 +188,7 @@ int main(int argc,char** argv) try {
          <<"\nlost_frames="<<tracker.missing<<"\nnew_ids="<<tracker.next_id-1<<"\nreselect_count="<<tracker.reselected
          <<"\nlost_tolerance="<<LOST_TOLERANCE<<"\nreselection_frames=";
     for(auto f:tracker.switch_frames)stats<<f<<",";stats<<"\n";
+    stats<<"impact_frames=";for(auto f:tracker.hit_frames)stats<<f<<",";stats<<"\n";
     std::cout<<input<<": "<<frame_index<<" frames, center="<<center_seen<<", target="<<tracker.detected<<", IDs="<<tracker.next_id-1<<"\n";
     return frame_index==expected?0:2;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

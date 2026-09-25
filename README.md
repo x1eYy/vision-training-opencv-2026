@@ -26,7 +26,7 @@ cmake --build build -j4
 ./build/task3_windmill --input resources/task_4.mp4 --output result/task3_windmill/task_4 --mode large
 ```
 
-`task3_windmill` 的 `--template` 默认为 `config/r_template.png`。`--mode small` 针对扇叶端部圆环，`--mode large` 针对中心附近发光扇叶；两种模式共用中心检测、跨帧关联、丢失和重选逻辑。
+`task3_windmill` 的 `--template` 默认为 `config/r_template.png`。`--mode small` 针对较大的扇叶端部圆环，`--mode large` 针对大能量场景扇叶端部的小圆靶心；两种模式共用中心检测、跨帧关联、丢失和重选逻辑。
 
 ## 任务 1：图像处理与结果
 
@@ -54,7 +54,7 @@ cmake --build build -j4
 
 ## 任务 3：真实视频视觉跟踪
 
-`task_3.mp4` 为小能量机关场景，1440×1080、30 FPS、796 帧；`task_4.mp4` 为大能量机关场景，1440×1080、30 FPS、1800 帧。逐帧从橙红色 R 标形状找移动中心，不使用固定中心；相对位置、稳定 ID、`detected/lost` 状态均绘制在原图。丢失容忍为 12 帧，超过后才允许选择新 ID。详情、检测统计、重选帧和已知失败情况见 [任务 3 独立说明](result/task3_tracking_result.md)。
+`task_3.mp4` 为小能量机关场景，1440×1080、30 FPS、796 帧；`task_4.mp4` 为大能量机关场景，1440×1080、30 FPS、1800 帧。逐帧从橙红色 R 标形状找移动中心，不使用固定中心；相对位置、稳定 ID、`detected/lost` 状态均绘制在原图。正常漏检容忍 12 帧；旧目标被绿色击中特效覆盖时立即失效，排除该目标并选择新的有效圆。详情、检测统计、重选帧和已知失败情况见 [任务 3 独立说明](result/task3_tracking_result.md)。
 
 | 输入 | 完整叠加视频 | 二值化过程视频 |
 |---|---|---|
