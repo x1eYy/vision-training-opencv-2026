@@ -26,7 +26,7 @@ cmake --build build -j4
 ./build/task3_windmill --input resources/task_4.mp4 --output result/task3_windmill/task_4 --mode large
 ```
 
-`task3_windmill` 的 `--template` 默认为 `config/r_template.png`。`--mode small` 针对较大的扇叶端部圆环，`--mode large` 针对大能量场景扇叶端部的小圆靶心；两种模式共用中心检测、跨帧关联、丢失和重选逻辑。
+`task3_windmill` 的 `--template` 默认为 `config/r_template.png`，`--config` 默认为 `config/windmill.yaml`。两个 mode 使用统一的 A/B 语义和检测逻辑。
 
 ## 任务 1：图像处理与结果
 
@@ -52,19 +52,50 @@ cmake --build build -j4
 - [估计角速度曲线](result/task2_fit/angular_velocity.png)
 - [角度残差图](result/task2_fit/residuals.png)
 
-## 任务 3：真实视频视觉跟踪
+## 任务 3：真实视频视觉跟踪（重构版）
 
-`task_3.mp4` 为小能量机关场景，1440×1080、30 FPS、796 帧；`task_4.mp4` 为大能量机关场景，1440×1080、30 FPS、1800 帧。逐帧从橙红色 R 标形状找移动中心，不使用固定中心；相对位置、稳定 ID、`detected/lost` 状态均绘制在原图。正常漏检容忍 12 帧；旧目标被绿色击中特效覆盖时立即失效，排除该目标并选择新的有效圆。详情、检测统计、重选帧和已知失败情况见 [任务 3 独立说明](result/task3_tracking_result.md)。
+**A：箭头链连接的同心圆，为有效目标。B：实心灯条连接的单层空心圆，排除。** 两个视频使用相同定义和检测器。绿色物体不会直接触发击中判定。
 
-| 输入 | 完整叠加视频 | 二值化过程视频 |
-|---|---|---|
-| `task_3.mp4` | [recognition_overlay.mp4](result/task3_windmill/task_3/recognition_overlay.mp4) | [binary_process.mp4](result/task3_windmill/task_3/binary_process.mp4) |
-| `task_4.mp4` | [recognition_overlay.mp4](result/task3_windmill/task_4/recognition_overlay.mp4) | [binary_process.mp4](result/task3_windmill/task_4/binary_process.mp4) |
+输入 `task_3.mp4` 为 1440×1080、30 FPS、796 帧；`task_4.mp4` 为相同分辨率和帧率、1800 帧。画面显示逐帧检测的 R 中心、拟合的外层椭圆、目标中心、连线、ID 和 `detected/lost`。中心不可靠或当前目标未匹配时，不绘制假定的有效目标，也不输出角度。
 
-输出视频保留输入的顺序、帧数、分辨率和固定帧率。两个子目录的 `tracking_stats.txt` 由程序自动生成，可核对检测数量。
+### 检测与身份保持
+
+1. 在等效宽度 1440 的尺度处理，输出映射回原始尺寸。橙红色掩膜采用多个亮度阈值和 3×3 闭运算；提取所有层级轮廓并拟合椭圆。
+2. 内外轮廓中心接近、径向亮环有足够覆盖与对比度，才具有同心证据。外环断裂时，从内环引导搜索实际外环像素，再拟合椭圆。内外边缘的重复候选合并。
+3. 在 R 到候选的走廊内检查亮峰数量和峰间距规律。实心灯条和没有内圈的 B 不构成有效 A。
+4. R 通过二值模板形状及周围目标布局评分，不把历史坐标当作当前观测。
+5. 为每个有效候选维护轨迹，按相对 R 的位置、大小、外观和帧间旋转变化进行带门限的一对一关联。被选目标仍被观测到时不改变选中 ID。
+6. 漏检保留 ID **12 帧**，显示 `lost`；第 13 个连续漏检帧允许释放。连续 **3 帧**有清楚的 B 或结构消失证据时提前释放；全黑、遮挡和仅出现另一个目标不属于失效证据。退休 ID 不复用。空闲时选择仍在观测中的最早轨迹。
+
+`--config config/windmill.yaml` 可调整模板分数、轮廓误差、同心偏移、断环覆盖、内环对比度、箭头周期性、丢失容忍和失效确认帧数。`--mode small/large` 保留旧命令兼容，目前两者使用同一套已验证参数。
+
+### 输出与复核
+
+| 输入 | 原图叠加视频 | 二值化过程视频 | 逐帧记录 |
+|---|---|---|---|
+| `task_3.mp4` | [recognition_overlay.mp4](result/task3_windmill/task_3/recognition_overlay.mp4) | [binary_process.mp4](result/task3_windmill/task_3/binary_process.mp4) | [frames.csv](result/task3_windmill/task_3/frames.csv) |
+| `task_4.mp4` | [recognition_overlay.mp4](result/task3_windmill/task_4/recognition_overlay.mp4) | [binary_process.mp4](result/task3_windmill/task_4/binary_process.mp4) | [frames.csv](result/task3_windmill/task_4/frames.csv) |
+
+每个目录另有 `candidates.csv`（所有几何候选与各项分数）、`tracks.csv`（各轨迹的观测、丢失、失效、退休状态）和 `tracking_stats.txt`。二值化视频中蓝色为几何候选、绿色为有效 A、黄色为最终锁定；这些标记叠加在二值掩膜上。CSV 的帧号从 **0** 开始，时间为 `frame / FPS`。ID=0 表示没有保留中的目标身份。
+
+详见 [任务 3 独立说明](result/task3_tracking_result.md)、[参考集指标](result/task3_windmill/validation/metrics.json)、[视频完整性](result/task3_windmill/validation/video_integrity.json) 和 [全部事件索引](result/task3_windmill/validation/events.json)。检测数量不等于识别正确数量。
+
+### 可复现验证
+
+评估脚本需要 `python3-opencv`、`python3-numpy` 和 `ffmpeg`。每个视频固定 40 个代表帧；参考椭圆为候选辅助、目视审核与部分手动修正的开发标注，**不是独立人工真值或留出测试集**。用户可检查 `config/windmill_reference.json` 中的标注及 `validation/` 中对应原图候选叠加图；任务 3 第 460 帧是结构转换期，明确从清晰帧指标中排除。
+
+```bash
+ctest --test-dir build --output-on-failure
+./build/windmill_reference_check
+python3 src/task3_windmill/evaluate.py
+python3 src/task3_windmill/verify_outputs.py
+python3 src/task3_windmill/review_events.py
+```
 
 ## 工程结构与复现检查
 
-`include/common.hpp` 和 `src/common/common.cpp` 提供保存图片、打开视频写入器与命令行参数处理。三个任务的入口分别在 `src/task1_image/`、`src/task2_fit/`、`src/task3_windmill/`。`config/r_template.png` 是从本次素材截取的 R 字母二值模板，用于形状比对；更换不同字体或拍摄尺度的素材时应重新校准模板与阈值。
+根目录保持讲义目录。`include/common.hpp` 和 `src/common/common.cpp` 提供通用读写工具；`include/windmill.hpp` 声明检测、轨迹和配置数据结构。任务 3 的 `main.cpp` 只组织读帧、检测、跟踪、绘制、写出；`detector.cpp` 实现几何与箭头链检测，`tracker.cpp` 维护身份，`render.cpp` 绘制结果。`tracker_test.cpp` 检查候选重排、中心移动、双目标、12 帧恢复、3 帧失效及 ID 不复用。
 
-复现后应看到 16 张任务 1 PNG、任务 2 的 3 张 PNG 与 1 个 MP4、任务 3 的 4 个 MP4。可用 OpenCV 或播放器检查文件可读，并核对标注视频的帧数与 FPS。结果可能因 OpenCV 编码器版本不同而有轻微体积差异。
+完整结果包括任务 1 的 16 张 PNG、任务 2 的 3 张 PNG 和 1 个 MP4、任务 3 的 4 个 MP4。视频逐帧顺序写出，不插帧或跳帧；验证程序完整解码、检查 CSV 帧序和视频时间戳，并比较原图与叠加图的对应内容。MP4 使用 OpenCV 的 `mp4v` 编码，不包含原音轨。
+
+学习用的详细项目文档位于仓库目录之外，不随作业提交。

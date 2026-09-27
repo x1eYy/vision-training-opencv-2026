@@ -1,0 +1,164 @@
+[
+  {
+    "video": "task_3",
+    "frame": 459,
+    "seconds": 15.3,
+    "original": "task_3_459_original.jpg",
+    "candidates": "task_3_459_candidates.jpg",
+    "status": "lost",
+    "selected_id": "1"
+  },
+  {
+    "video": "task_3",
+    "frame": 461,
+    "seconds": 15.366666666666667,
+    "original": "task_3_461_original.jpg",
+    "candidates": "task_3_461_candidates.jpg",
+    "status": "lost",
+    "selected_id": "0"
+  },
+  {
+    "video": "task_3",
+    "frame": 537,
+    "seconds": 17.9,
+    "original": "task_3_537_original.jpg",
+    "candidates": "task_3_537_candidates.jpg",
+    "status": "lost",
+    "selected_id": "2"
+  },
+  {
+    "video": "task_3",
+    "frame": 539,
+    "seconds": 17.966666666666665,
+    "original": "task_3_539_original.jpg",
+    "candidates": "task_3_539_candidates.jpg",
+    "status": "detected",
+    "selected_id": "3"
+  },
+  {
+    "video": "task_3",
+    "frame": 630,
+    "seconds": 21.0,
+    "original": "task_3_630_original.jpg",
+    "candidates": "task_3_630_candidates.jpg",
+    "status": "detected",
+    "selected_id": "4"
+  },
+  {
+    "video": "task_3",
+    "frame": 632,
+    "seconds": 21.066666666666666,
+    "original": "task_3_632_original.jpg",
+    "candidates": "task_3_632_candidates.jpg",
+    "status": "detected",
+    "selected_id": "4"
+  },
+  {
+    "video": "task_3",
+    "frame": 703,
+    "seconds": 23.433333333333334,
+    "original": "task_3_703_original.jpg",
+    "candidates": "task_3_703_candidates.jpg",
+    "status": "detected",
+    "selected_id": "4"
+  },
+  {
+    "video": "task_3",
+    "frame": 704,
+    "seconds": 23.466666666666665,
+    "original": "task_3_704_original.jpg",
+    "candidates": "task_3_704_candidates.jpg",
+    "status": "lost",
+    "selected_id": "4"
+  },
+  {
+    "video": "task_3",
+    "frame": 707,
+    "seconds": 23.566666666666666,
+    "original": "task_3_707_original.jpg",
+    "candidates": "task_3_707_candidates.jpg",
+    "status": "detected",
+    "selected_id": "5"
+  },
+  {
+    "video": "task_4",
+    "frame": 101,
+    "seconds": 3.3666666666666667,
+    "original": "task_4_101_original.jpg",
+    "candidates": "task_4_101_candidates.jpg",
+    "status": "lost",
+    "selected_id": "1"
+  },
+  {
+    "video": "task_4",
+    "frame": 113,
+    "seconds": 3.7666666666666666,
+    "original": "task_4_113_original.jpg",
+    "candidates": "task_4_113_candidates.jpg",
+    "status": "detected",
+    "selected_id": "3"
+  },
+  {
+    "video": "task_4",
+    "frame": 162,
+    "seconds": 5.4,
+    "original": "task_4_162_original.jpg",
+    "candidates": "task_4_162_candidates.jpg",
+    "status": "lost",
+    "selected_id": "3"
+  },
+  {
+    "video": "task_4",
+    "frame": 174,
+    "seconds": 5.8,
+    "original": "task_4_174_original.jpg",
+    "candidates": "task_4_174_candidates.jpg",
+    "status": "detected",
+    "selected_id": "4"
+  },
+  {
+    "video": "task_4",
+    "frame": 527,
+    "seconds": 17.566666666666666,
+    "original": "task_4_527_original.jpg",
+    "candidates": "task_4_527_candidates.jpg",
+    "status": "detected",
+    "selected_id": "9"
+  },
+  {
+    "video": "task_4",
+    "frame": 540,
+    "seconds": 18.0,
+    "original": "task_4_540_original.jpg",
+    "candidates": "task_4_540_candidates.jpg",
+    "status": "detected",
+    "selected_id": "10"
+  },
+  {
+    "video": "task_4",
+    "frame": 630,
+    "seconds": 21.0,
+    "original": "task_4_630_original.jpg",
+    "candidates": "task_4_630_candidates.jpg",
+    "status": "lost",
+    "selected_id": "0"
+  },
+  {
+    "video": "task_4",
+    "frame": 1215,
+    "seconds": 40.5,
+    "original": "task_4_1215_original.jpg",
+    "candidates": "task_4_1215_candidates.jpg",
+    "status": "lost",
+    "selected_id": "11"
+  },
+  {
+    "video": "task_4",
+    "frame": 1436,
+    "seconds": 47.86666666666667,
+    "original": "task_4_1436_original.jpg",
+    "candidates": "task_4_1436_candidates.jpg",
+    "status": "detected",
+    "selected_id": "13"
+  }
+]

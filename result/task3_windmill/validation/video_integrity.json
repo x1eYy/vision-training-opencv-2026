@@ -1,0 +1,54 @@
+{
+  "task_3": {
+    "movies": {
+      "recognition_overlay.mp4": {
+        "decoded_frames": 796,
+        "fps": 30.0,
+        "resolution": [
+          1440,
+          1080
+        ],
+        "timestamps_in_order": true,
+        "source_correspondence_trimmed_MAE_max": 0.395461913530617
+      },
+      "binary_process.mp4": {
+        "decoded_frames": 796,
+        "fps": 30.0,
+        "resolution": [
+          1440,
+          1080
+        ],
+        "timestamps_in_order": true,
+        "source_correspondence_trimmed_MAE_max": null
+      }
+    },
+    "csv_rows": 796,
+    "tracking_invariants_passed": true
+  },
+  "task_4": {
+    "movies": {
+      "recognition_overlay.mp4": {
+        "decoded_frames": 1800,
+        "fps": 30.0,
+        "resolution": [
+          1440,
+          1080
+        ],
+        "timestamps_in_order": true,
+        "source_correspondence_trimmed_MAE_max": 0.37682776791131356
+      },
+      "binary_process.mp4": {
+        "decoded_frames": 1800,
+        "fps": 30.0,
+        "resolution": [
+          1440,
+          1080
+        ],
+        "timestamps_in_order": true,
+        "source_correspondence_trimmed_MAE_max": null
+      }
+    },
+    "csv_rows": 1800,
+    "tracking_invariants_passed": true
+  }
+}

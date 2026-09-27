@@ -1,0 +1,7 @@
+{
+  "annotation_method": "Visual review of source and event contact sheets; intervals describe the same physical A remaining selected. Reviewed during development, not an independent held-out test.",
+  "intervals": [
+    {"video": "task_4", "start": 0, "end": 30, "description": "Two A targets; initially selected lower-left A must remain locked as the candidates rotate."},
+    {"video": "task_4", "start": 945, "end": 1080, "description": "Two A targets rotate with moving R; the selected initially lower A must keep its identity."}
+  ]
+}

@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /home/xy/romomaster/workspace/test_2/build
+Test project /home/xy/romomaster/workspace/test_2/build
+    Start 1: windmill_tracker_state_machine
+1/1 Test #1: windmill_tracker_state_machine ...   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec

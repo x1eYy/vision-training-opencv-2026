@@ -1,0 +1,15 @@
+%YAML:1.0
+# Lengths are measured at a canonical 1440-pixel image width.
+center_score: 0.68
+ellipse_error: 0.15
+concentric_offset: 0.18
+minimum_coverage: 0.50
+arrow_peaks: 5
+lost_tolerance: 12
+invalid_confirm: 3
+arrow_prominence: 0.04
+max_gap_cv: 0.45
+inner_contrast: 0.22
+inner_support: 0.80
+solid_run: 0.30
+min_peak_balance: 0.25

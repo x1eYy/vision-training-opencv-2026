@@ -1,0 +1,31 @@
+{
+  "reference_sha256": "98e51d07cbfaf68b6e27cadc53bf7913fb5b5b2201713a3a29b269f3b216615c",
+  "annotation_limit": "Visually reviewed algorithm-assisted annotations; not independent human ground truth. Used for development, not a held-out test.",
+  "metrics": {
+    "task_3": {
+      "tp": 29,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "center_error_radius_mean": 0.0081669924799503,
+      "center_error_radius_max": 0.03129887119703191,
+      "outline_error_radius_mean": 0.03443208328993372,
+      "outline_error_radius_max": 0.05827616503264047,
+      "R_center_error_pixels_max": 4.122755527744842e-05
+    },
+    "task_4": {
+      "tp": 48,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "center_error_radius_mean": 0.009165095961875019,
+      "center_error_radius_max": 0.035082584563343795,
+      "outline_error_radius_mean": 0.03924837962846076,
+      "outline_error_radius_max": 0.09365087712028711,
+      "R_center_error_pixels_max": 3.408021838972027e-05
+    }
+  },
+  "failures": []
+}
